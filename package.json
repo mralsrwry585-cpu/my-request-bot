@@ -1,0 +1,16 @@
+{
+  "name": "enterprise-flow-engine",
+  "version": "1.1.0",
+  "description": "Production-grade HTTP flow injector with realtime monitor",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "axios": "^1.6.0",
+    "express": "^4.18.2"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

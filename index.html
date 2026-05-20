@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard | لوحة التحكم والمراقبة الاحترافية</title>
+    <style>
+        :root { --bg-dark: #0b0f19; --card-bg: #151d30; --border-color: #24324f; --text-main: #f1f5f9; --text-muted: #64748b; --primary: #38bdf8; --success: #10b981; --danger: #ef4444; --warning: #f59e0b; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg-dark); color: var(--text-main); margin: 0; padding: 20px; display: flex; justify-content: center; align-items: center; min-height: 100vh; box-sizing: border-box; }
+        .wrapper { background: var(--card-bg); padding: 25px; border-radius: 16px; box-shadow: 0 20px 40px rgba(0,0,0,0.5); width: 100%; max-width: 600px; border: 1px solid var(--border-color); }
+        h1 { font-size: 20px; margin: 0 0 8px 0; text-align: center; color: var(--primary); font-weight: 600; }
+        .sub-title { font-size: 12px; color: var(--text-muted); text-align: center; margin-bottom: 20px; }
+        .status-panel { display: block; text-align: center; padding: 10px; border-radius: 8px; font-weight: bold; font-size: 13px; margin-bottom: 20px; border: 1px solid transparent; }
+        .engine-active { background: rgba(16, 185, 129, 0.1); color: var(--success); border-color: rgba(16, 185, 129, 0.2); }
+        .engine-stopped { background: rgba(239, 68, 68, 0.1); color: var(--danger); border-color: rgba(239, 68, 68, 0.2); }
+        .engine-throttled { background: rgba(245, 158, 11, 0.1); color: var(--warning); border-color: rgba(245, 158, 11, 0.2); animation: fadeBlink 1.5s infinite; }
+        .metrics-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
+        .metric-card { background: rgba(11, 15, 25, 0.6); padding: 14px; border-radius: 10px; border: 1px solid var(--border-color); text-align: center; }
+        .metric-card span { display: block; font-size: 11px; color: var(--text-muted); margin-bottom: 6px; letter-spacing: 0.5px; }
+        .metric-card strong { font-size: 22px; font-family: 'Courier New', Courier, monospace; color: var(--text-main); }
+        .controls-row { display: flex; gap: 8px; justify-content: center; margin-bottom: 25px; }
+        button { flex: 1; padding: 12px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.2s ease; font-size: 14px; }
+        .btn-green { background: var(--success); color: #fff; } .btn-green:hover { background: #059669; }
+        .btn-red { background: var(--danger); color: #fff; } .btn-red:hover { background: #dc2626; }
+        .btn-slate { background: #334155; color: #fff; } .btn-slate:hover { background: #1e293b; }
+        h2 { font-size: 14px; color: var(--text-muted); margin: 0 0 10px 0; font-weight: 500; display: flex; justify-content: space-between; }
+        .terminal-box { background: #070a12; height: 200px; border-radius: 10px; border: 1px solid var(--border-color); padding: 12px; overflow-y: auto; font-family: 'Consolas', monospace; font-size: 11.5px; display: flex; flex-direction: column; gap: 6px; box-sizing: border-box; }
+        .log-item { display: flex; gap: 10px; padding: 4px 8px; border-radius: 4px; border-right: 3px solid #334155; background: rgba(255,255,255,0.01); }
+        .log-time { color: var(--text-muted); white-space: nowrap; }
+        .log-msg { color: #cbd5e1; word-break: break-all; }
+        .lvl-success { border-right-color: var(--success); } .lvl-success .log-msg { color: #a7f3d0; }
+        .lvl-danger { border-right-color: var(--danger); } .lvl-danger .log-msg { color: #fca5a5; }
+        .lvl-warn { border-right-color: var(--warning); } .lvl-warn .log-msg { color: #fde047; }
+        .lvl-info { border-right-color: var(--primary); }
+        @keyframes fadeBlink { 50% { opacity: 0.6; } }
+    </style>
+</head>
+<body>
+
+<div class="wrapper">
+    <h1>📊 لوحة متابعة ومراقبة التدفق الاحترافية</h1>
+    <div class="sub-title">إصدار الإنتاج المستقر المستضاف سحابياً</div>
+    
+    <div id="statusIndicator" class="status-panel engine-active">المحرك متصل ويعمل بثبات</div>
+
+    <div class="metrics-grid">
+        <div class="metric-card"><span>إجمالي المحاولات</span><strong id="m_total">0</strong></div>
+        <div class="metric-card"><span>طلبات ناجحة (200)</span><strong id="m_success" style="color: var(--success);">0</strong></div>
+        <div class="metric-card"><span>طلبات فاشلة / مفقودة</span><strong id="m_failed" style="color: var(--danger);">0</strong></div>
+        <div class="metric-card"><span>الاتصالات الحية المفتوحة</span><strong id="m_active" style="color: var(--primary);">0</strong></div>
+    </div>
+
+    <div class="controls-row">
+        <button class="btn-green" onclick="fireAction('start')">تشغيل وضخ</button>
+        <button class="btn-red" onclick="fireAction('stop')">إيقاف التدفق</button>
+        <button class="btn-slate" onclick="fireAction('reset')">تصفير الإحصاءات</button>
+    </div>
+
+    <h2>
+        <span>📜 الردود والتقارير الحية (Live Logs):</span>
+        <span style="font-size: 11px; font-weight: normal;" id="liveIndicator">🟢 متصل حياً</span>
+    </h2>
+    <div id="terminal" class="terminal-box">
+        <!-- تعبئة السجلات ديناميكياً -->
+    </div>
+</div>
+
+<script>
+    async function refreshDashboard() {
+        try {
+            const response = await fetch('/api/metrics');
+            const data = await response.json();
+            
+            // تحديث العدادات الرقمية
+            document.getElementById('m_total').innerText = data.stats.total;
+            document.getElementById('m_success').innerText = data.stats.success;
+            document.getElementById('m_failed').innerText = data.stats.failed;
+            document.getElementById('m_active').innerText = data.stats.activeConnections;
+
+            // تحديث شريط الحالة الرئيسي
+            const indicator = document.getElementById('statusIndicator');
+            if (!data.stats.isRunning) {
+                indicator.innerText = "المحرك موقوف مؤقتاً (وضع الاستعداد)";
+                indicator.className = "status-panel engine-stopped";
+            } else if (data.stats.isThrottled) {
+                indicator.innerText = "⚠️ وضع التراجع الذكي نشط لتفادي قيود السيرفر";
+                indicator.className = "status-panel engine-throttled";
+            } else {
+                indicator.innerText = "المحرك يضخ البيانات بكفاءة واستقرار كامل";
+                indicator.className = "status-panel engine-active";
+            }
+
+            // تحديث الـ Terminal المباشر للردود
+            const terminal = document.getElementById('terminal');
+            terminal.innerHTML = '';
+            
+            if (data.logs.length === 0) {
+                terminal.innerHTML = '<div style="color: var(--text-muted); text-align: center; margin-top: 85px;">لا توجد سجلات حالياً، بانتظار بدء تشغيل المحرك...</div>';
+            } else {
+                data.logs.forEach(log => {
+                    const block = document.createElement('div');
+                    block.className = `log-item lvl-${log.level}`;
+                    block.innerHTML = `<span class="log-time">[${log.time}]</span><span class="log-msg">${log.message}</span>`;
+                    terminal.appendChild(block);
+                });
+            }
+            document.getElementById('liveIndicator').innerText = "🟢 متصل حياً";
+            document.getElementById('liveIndicator').style.color = "var(--success)";
+        } catch (err) {
+            document.getElementById('liveIndicator').innerText = "🔴 خطأ في الاتصال";
+            document.getElementById('liveIndicator').style.color = "var(--danger)";
+        }
+    }
+
+    async function fireAction(action) {
+        try {
+            await fetch(`/api/engine/${action}`, { method: 'POST' });
+            refreshDashboard();
+        } catch(e) {}
+    }
+
+    // دورة تحديث سريعة وثابتة كل ثانية (1000ms)
+    setInterval(refreshDashboard, 1000);
+    refreshDashboard();
+</script>
+</body>
+</html>
